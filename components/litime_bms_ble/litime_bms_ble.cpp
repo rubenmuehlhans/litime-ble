@@ -422,6 +422,10 @@ void LitimeDischargingSwitch::dump_config() {
 // LitimeBleScanner — passive discovery
 // ============================================================================
 
+void LitimeBleScanner::setup() {
+  ESP_LOGI(TAG, "LiTime BLE Scanner started — logging ALL BLE devices");
+}
+
 void LitimeBleScanner::dump_config() {
   ESP_LOGCONFIG(TAG, "LiTime BLE Scanner:");
   ESP_LOGCONFIG(TAG, "  Scanning for devices with name prefix 'LT-', 'L-', or service UUID 0xFFE0");

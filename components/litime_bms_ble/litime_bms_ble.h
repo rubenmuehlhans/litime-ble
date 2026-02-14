@@ -214,6 +214,7 @@ class LitimeDischargingSwitch : public switch_::Switch, public Component {
 
 class LitimeBleScanner : public esp32_ble_tracker::ESPBTDeviceListener, public Component {
  public:
+  void setup() override;
   void dump_config() override;
   float get_setup_priority() const override { return setup_priority::DATA; }
 
