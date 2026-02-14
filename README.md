@@ -57,20 +57,23 @@ external_components:
 
 esp32_ble_tracker:
   scan_parameters:
-    active: false
+    active: true
 
 litime_bms_ble:
   - id: scanner
 ```
 
+> **Note:** `active: true` is important -- some batteries only send their full name in the scan response, which requires an active scan.
+
 Check the ESPHome log output for entries like:
 
 ```
 [I][litime_bms_ble]: ========================================
-[I][litime_bms_ble]:   Found LiTime device!
-[I][litime_bms_ble]:   Name: "LT-B12345"
-[I][litime_bms_ble]:   MAC:  AA:BB:CC:DD:EE:FF
-[I][litime_bms_ble]:   RSSI: -67 dBm
+[I][litime_bms_ble]:   Found compatible BLE device!
+[I][litime_bms_ble]:   Name:  "L-12345"
+[I][litime_bms_ble]:   MAC:   AA:BB:CC:DD:EE:FF
+[I][litime_bms_ble]:   RSSI:  -67 dBm
+[I][litime_bms_ble]:   Match: name prefix "L-"
 [I][litime_bms_ble]:   Add to your YAML:
 [I][litime_bms_ble]:     ble_client:
 [I][litime_bms_ble]:       - mac_address: "AA:BB:CC:DD:EE:FF"
@@ -107,7 +110,7 @@ external_components:
 
 esp32_ble_tracker:
   scan_parameters:
-    active: false
+    active: true
 
 ble_client:
   - mac_address: "AA:BB:CC:DD:EE:FF"  # <-- your MAC here
@@ -342,17 +345,30 @@ Checksum = `byte[2] + byte[3] + byte[4]`
 
 ### Battery not found by scanner
 
+- Make sure `active: true` is set in `esp32_ble_tracker` -- some batteries only advertise their name in the scan response
 - Make sure the battery is powered on and BLE is enabled
-- Check that no other device (phone app) is currently connected to the battery
-- Reduce distance between ESP32 and battery
+- Check that no other device (phone app) is currently connected to the battery -- a BLE peripheral typically only accepts one connection
+- Reduce distance between ESP32 and battery (BLE range: ~5-10m)
 - Set logger level to `DEBUG` for more details
+
+The scanner detects devices using these criteria (in order):
+
+| Match | Pattern | Example |
+|---|---|---|
+| Name prefix | `LT-` | `LT-B12345` |
+| Name prefix | `L-` | `L-12345` |
+| Name contains | `litime` (case-insensitive) | `LiTime_BMS_01` |
+| Name contains | `redodo` (case-insensitive) | `Redodo-100Ah` |
+| Name contains | `powerqueen` (case-insensitive) | `PowerQueen_01` |
+| Service UUID | `0xFFE0` in advertisement | *(any name or no name)* |
+
+If your battery uses a different name pattern, you can find its MAC address using the **nRF Connect** app on your phone and configure it manually in the `ble_client` section.
 
 ### Connection drops frequently
 
 - Increase `update_interval` to reduce BLE traffic (e.g. `10s` or `15s`)
 - Reduce the number of simultaneous BLE connections
 - Ensure stable power supply to the ESP32
-- Try adding `scan_parameters: active: false` to `esp32_ble_tracker`
 
 ### Sensors show NaN
 

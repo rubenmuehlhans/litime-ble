@@ -8,6 +8,7 @@
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/switch/switch.h"
 
+#include <algorithm>
 #include <set>
 #include <string>
 #include <vector>
