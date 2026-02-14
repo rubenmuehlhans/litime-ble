@@ -4,7 +4,7 @@ import esphome.config_validation as cv
 from esphome.const import CONF_ID
 
 CODEOWNERS = ["@rubenmuehlhans"]
-DEPENDENCIES = ["esp32_ble_tracker"]
+DEPENDENCIES = ["ble_client", "esp32_ble_tracker"]
 AUTO_LOAD = ["sensor", "binary_sensor", "text_sensor", "switch"]
 MULTI_CONF = True
 
