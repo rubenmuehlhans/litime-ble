@@ -1,0 +1,107 @@
+# Test build configuration — no secrets, all features enabled
+esphome:
+  name: "litime-bms-test"
+  friendly_name: "LiTime BMS Test"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+  level: DEBUG
+
+# External component: local path
+external_components:
+  - source:
+      type: local
+      path: components
+
+# BLE tracker (required)
+esp32_ble_tracker:
+  scan_parameters:
+    active: false
+
+# BLE client
+ble_client:
+  - mac_address: "AA:BB:CC:DD:EE:FF"
+    id: bms_client_1
+
+# Scanner + Monitor in one list
+litime_bms_ble:
+  - id: litime_scanner
+  - id: bms1
+    ble_client_id: bms_client_1
+    update_interval: 5s
+
+# --- Sensors ---
+sensor:
+  - platform: litime_bms_ble
+    litime_bms_ble_id: bms1
+    total_voltage:
+      name: "Voltage"
+    current:
+      name: "Current"
+    power:
+      name: "Power"
+    state_of_charge:
+      name: "SOC"
+    state_of_health:
+      name: "SOH"
+    cell_temperature:
+      name: "Cell Temp"
+    mosfet_temperature:
+      name: "MOSFET Temp"
+    remaining_capacity:
+      name: "Remaining Ah"
+    full_charge_capacity:
+      name: "Full Ah"
+    discharge_cycles:
+      name: "Cycles"
+    total_discharge_ah:
+      name: "Total Discharge"
+    min_cell_voltage:
+      name: "Min Cell V"
+    max_cell_voltage:
+      name: "Max Cell V"
+    delta_cell_voltage:
+      name: "Delta Cell V"
+    cell_voltage_1:
+      name: "Cell 1"
+    cell_voltage_2:
+      name: "Cell 2"
+    cell_voltage_3:
+      name: "Cell 3"
+    cell_voltage_4:
+      name: "Cell 4"
+
+# --- Binary Sensors ---
+binary_sensor:
+  - platform: litime_bms_ble
+    litime_bms_ble_id: bms1
+    charging:
+      name: "Charging"
+    discharging:
+      name: "Discharging"
+    balancing:
+      name: "Balancing"
+    online:
+      name: "Online"
+
+# --- Text Sensors ---
+text_sensor:
+  - platform: litime_bms_ble
+    litime_bms_ble_id: bms1
+    protection_status:
+      name: "Protection"
+    failure_status:
+      name: "Errors"
+
+# --- Switches ---
+switch:
+  - platform: litime_bms_ble
+    litime_bms_ble_id: bms1
+    charging_switch:
+      name: "Charging Switch"
+    discharging_switch:
+      name: "Discharging Switch"
