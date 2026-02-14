@@ -428,51 +428,6 @@ void LitimeBleScanner::dump_config() {
 }
 
 bool LitimeBleScanner::parse_device(const espbt::ESPBTDevice &device) {
-  const std::string &name = device.get_name();
-  bool name_match = false;
-  bool service_match = false;
-  std::string match_reason;
-
-  // --- Check known name prefixes ---
-  if (!name.empty()) {
-    // Known prefixes: "LT-" (confirmed), "L-" (observed on some models)
-    if (name.size() >= 3 && name.substr(0, 3) == "LT-") {
-      name_match = true;
-      match_reason = "name prefix \"LT-\"";
-    } else if (name.size() >= 2 && name.substr(0, 2) == "L-") {
-      name_match = true;
-      match_reason = "name prefix \"L-\"";
-    } else {
-      // Case-insensitive check for known brand names
-      std::string lower_name = name;
-      std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
-      if (lower_name.find("litime") != std::string::npos) {
-        name_match = true;
-        match_reason = "name contains \"litime\"";
-      } else if (lower_name.find("redodo") != std::string::npos) {
-        name_match = true;
-        match_reason = "name contains \"redodo\"";
-      } else if (lower_name.find("powerqueen") != std::string::npos) {
-        name_match = true;
-        match_reason = "name contains \"powerqueen\"";
-      }
-    }
-  }
-
-  // --- Fallback: check for service UUID 0xFFE0 in advertisement data ---
-  if (!name_match) {
-    for (auto uuid : device.get_service_uuids()) {
-      if (uuid == SERVICE_UUID) {
-        service_match = true;
-        match_reason = "service UUID 0xFFE0";
-        break;
-      }
-    }
-  }
-
-  if (!name_match && !service_match)
-    return false;
-
   // Deduplicate by MAC address
   auto addr = device.address_uint64();
   if (this->discovered_devices_.count(addr) > 0)
@@ -480,24 +435,28 @@ bool LitimeBleScanner::parse_device(const espbt::ESPBTDevice &device) {
 
   this->discovered_devices_.insert(addr);
 
+  const std::string &name = device.get_name();
+
   // Format MAC address
   char mac_str[18];
   const uint8_t *raw = device.address();
   snprintf(mac_str, sizeof(mac_str), "%02X:%02X:%02X:%02X:%02X:%02X",
            raw[0], raw[1], raw[2], raw[3], raw[4], raw[5]);
 
-  ESP_LOGI(TAG, "========================================");
-  ESP_LOGI(TAG, "  Found compatible BLE device!");
-  ESP_LOGI(TAG, "  Name:  \"%s\"", name.empty() ? "(unknown)" : name.c_str());
-  ESP_LOGI(TAG, "  MAC:   %s", mac_str);
-  ESP_LOGI(TAG, "  RSSI:  %d dBm", device.get_rssi());
-  ESP_LOGI(TAG, "  Match: %s", match_reason.c_str());
-  ESP_LOGI(TAG, "  Add to your YAML:");
-  ESP_LOGI(TAG, "    ble_client:");
-  ESP_LOGI(TAG, "      - mac_address: \"%s\"", mac_str);
-  ESP_LOGI(TAG, "========================================");
+  // Collect service UUIDs
+  std::string services;
+  for (auto uuid : device.get_service_uuids()) {
+    if (!services.empty()) services += ", ";
+    services += uuid.to_string();
+  }
 
-  return false;  // Don't claim the device, let other listeners see it too
+  ESP_LOGI(TAG, "BLE: \"%s\" MAC=%s RSSI=%d Services=[%s]",
+           name.empty() ? "(no name)" : name.c_str(),
+           mac_str,
+           device.get_rssi(),
+           services.empty() ? "none" : services.c_str());
+
+  return false;
 }
 
 }  // namespace litime_bms_ble
