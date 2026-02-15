@@ -12,10 +12,10 @@ static const char *const TAG = "litime_bms_ble";
 // ============================================================================
 // Helper: build an 8-byte command frame
 // Format: {0x00, 0x00, 0x04, 0x01, CMD, 0x55, 0xAA, CHECKSUM}
-// Checksum = byte[2] + byte[3] + byte[4] = 0x04 + 0x01 + CMD = 0x05 + CMD
+// Checksum = byte[2] + byte[4] = 0x04 + CMD
 // ============================================================================
 static std::vector<uint8_t> build_command(uint8_t cmd) {
-  uint8_t checksum = 0x04 + 0x01 + cmd;
+  uint8_t checksum = 0x04 + cmd;
   return {0x00, 0x00, 0x04, 0x01, cmd, 0x55, 0xAA, checksum};
 }
 
