@@ -9,6 +9,7 @@ DEPENDENCIES = ["litime_bms_ble"]
 
 CONF_CHARGING_SWITCH = "charging_switch"
 CONF_DISCHARGING_SWITCH = "discharging_switch"
+CONF_CONNECT_SWITCH = "connect_switch"
 
 # Custom switch classes that forward write_state to the hub
 LitimeChargingSwitch = litime_bms_ble_ns.class_(
@@ -17,6 +18,10 @@ LitimeChargingSwitch = litime_bms_ble_ns.class_(
 
 LitimeDischargingSwitch = litime_bms_ble_ns.class_(
     "LitimeDischargingSwitch", switch.Switch, cg.Component
+)
+
+LitimeConnectSwitch = litime_bms_ble_ns.class_(
+    "LitimeConnectSwitch", switch.Switch, cg.Component
 )
 
 CONFIG_SCHEMA = LITIME_BMS_BLE_COMPONENT_SCHEMA.extend(
@@ -28,6 +33,10 @@ CONFIG_SCHEMA = LITIME_BMS_BLE_COMPONENT_SCHEMA.extend(
         cv.Optional(CONF_DISCHARGING_SWITCH): switch.switch_schema(
             LitimeDischargingSwitch,
             icon="mdi:battery-arrow-down-outline",
+        ),
+        cv.Optional(CONF_CONNECT_SWITCH): switch.switch_schema(
+            LitimeConnectSwitch,
+            icon="mdi:bluetooth-connect",
         ),
     }
 )
@@ -47,3 +56,8 @@ async def to_code(config):
         await cg.register_component(sw, config[CONF_DISCHARGING_SWITCH])
         cg.add(sw.set_parent(hub))
         cg.add(hub.set_discharging_switch(sw))
+
+    if CONF_CONNECT_SWITCH in config:
+        sw = await switch.new_switch(config[CONF_CONNECT_SWITCH])
+        await cg.register_component(sw, config[CONF_CONNECT_SWITCH])
+        cg.add(sw.set_parent(hub))

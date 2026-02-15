@@ -208,6 +208,21 @@ class LitimeDischargingSwitch : public switch_::Switch, public Component {
   LitimeBmsBle *parent_{nullptr};
 };
 
+class LitimeConnectSwitch : public switch_::Switch, public Component {
+ public:
+  void set_parent(LitimeBmsBle *parent) { this->parent_ = parent; }
+  void dump_config() override;
+
+ protected:
+  void write_state(bool state) override {
+    if (this->parent_->parent() != nullptr) {
+      this->parent_->parent()->set_enabled(state);
+    }
+    this->publish_state(state);
+  }
+  LitimeBmsBle *parent_{nullptr};
+};
+
 // ============================================================================
 // LiTime BLE Scanner — passive discovery of LiTime devices
 // ============================================================================

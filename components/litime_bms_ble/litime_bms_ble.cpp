@@ -418,6 +418,10 @@ void LitimeDischargingSwitch::dump_config() {
   ESP_LOGCONFIG(TAG, "LiTime Discharging Switch");
 }
 
+void LitimeConnectSwitch::dump_config() {
+  ESP_LOGCONFIG(TAG, "LiTime Connect Switch");
+}
+
 // ============================================================================
 // LitimeBleScanner — passive discovery
 // ============================================================================
