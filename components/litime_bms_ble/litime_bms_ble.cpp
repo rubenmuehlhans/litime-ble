@@ -123,9 +123,6 @@ void LitimeBmsBle::gattc_event_handler(esp_gattc_cb_event_t event,
       this->missed_updates_ = 0;
       ESP_LOGI(TAG, "BLE connection established");
       this->publish_state_(this->online_binary_sensor_, true);
-
-      // Send initial registration command
-      this->send_command_(CMD_REGISTER);
       break;
     }
 
@@ -134,17 +131,23 @@ void LitimeBmsBle::gattc_event_handler(esp_gattc_cb_event_t event,
       if (param->notify.handle != this->char_notify_handle_)
         break;
 
-      ESP_LOGV(TAG, "Received notification: %d bytes", param->notify.value_len);
+      ESP_LOGD(TAG, "Received notification: %d bytes", param->notify.value_len);
 
-      // Check if this is a status response (must be at least MIN_RESPONSE_LENGTH bytes)
-      if (param->notify.value_len >= MIN_RESPONSE_LENGTH) {
-        this->parse_status_response_(param->notify.value, param->notify.value_len);
-        this->response_received_ = true;
-        this->missed_updates_ = 0;
-      } else {
-        ESP_LOGD(TAG, "Received short response (%d bytes), ignoring",
-                 param->notify.value_len);
+      // Validate: byte[2] must be 0x65 (status response marker)
+      if (param->notify.value_len < MIN_RESPONSE_LENGTH) {
+        ESP_LOGD(TAG, "Short response (%d bytes), ignoring", param->notify.value_len);
+        break;
       }
+
+      if (param->notify.value[2] != 0x65) {
+        ESP_LOGD(TAG, "Not a status response (byte[2]=0x%02X, expected 0x65), ignoring",
+                 param->notify.value[2]);
+        break;
+      }
+
+      this->parse_status_response_(param->notify.value, param->notify.value_len);
+      this->response_received_ = true;
+      this->missed_updates_ = 0;
       break;
     }
 
@@ -201,8 +204,8 @@ void LitimeBmsBle::send_command_(uint8_t cmd) {
 void LitimeBmsBle::parse_status_response_(const uint8_t *data, size_t len) {
   ESP_LOGD(TAG, "Parsing status response (%d bytes)", len);
 
-  // --- Total voltage (bytes 8-11) ---
-  float total_voltage = get_uint32_le(data + 8) / 1000.0f;
+  // --- Total voltage (bytes 12-15) ---
+  float total_voltage = get_uint32_le(data + 12) / 1000.0f;
   this->publish_state_(this->total_voltage_sensor_, total_voltage);
 
   // --- Individual cell voltages (bytes 16-47, 16x uint16_le) ---
@@ -279,8 +282,8 @@ void LitimeBmsBle::parse_status_response_(const uint8_t *data, size_t len) {
   float soc = static_cast<float>(get_uint16_le(data + 90));
   this->publish_state_(this->state_of_charge_sensor_, soc);
 
-  // --- SOH (bytes 92-95, uint32_le) ---
-  float soh = static_cast<float>(get_uint32_le(data + 92));
+  // --- SOH (bytes 92-93, uint16_le) ---
+  float soh = static_cast<float>(get_uint16_le(data + 92));
   this->publish_state_(this->state_of_health_sensor_, soh);
 
   // --- Discharge cycle count (bytes 96-99, uint32_le) ---
